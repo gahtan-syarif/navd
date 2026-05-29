@@ -1,6 +1,6 @@
 # navd
 
-An interactive fuzzy directory navigator for the terminal. Drill down into directories with a live tree preview. Press `ESC` or `CTRL-C` to land in the current directory.
+An interactive fuzzy directory navigator for the terminal. Drill down into directories with a live tree preview. Press `CTRL-C` to land in the current directory.
 
 ## Demo
 <img width="800" height="423" alt="navd" src="https://github.com/user-attachments/assets/a9548f06-ed0f-47fb-868e-6a51404c0b91" />
@@ -45,11 +45,28 @@ navd() {
   while true; do
     local dir
     if [ -n "$fd_cmd" ]; then
-      dir=$($fd_cmd --exclude '.*/' --type d 2>/dev/null | fzf ${preview_cmd:+--preview "$preview_cmd"})
+      dir=$($fd_cmd --exclude '.*/' --type d 2>/dev/null | fzf \
+      --header="  CURRENT DIR: $PWD" ${preview_cmd:+--preview "$preview_cmd"} --expect=esc)
     else
-      dir=$(find . -mindepth 1 -type d -not -path '*/.*' 2>/dev/null | cut -b3- | fzf ${preview_cmd:+--preview "$preview_cmd"})
+      dir=$(find . -mindepth 1 -type d -not -path '*/.*' 2>/dev/null | cut -b3- | fzf \
+      --header="  CURRENT DIR: $PWD" ${preview_cmd:+--preview "$preview_cmd"} --expect=esc)
     fi
-    [ -n "$dir" ] && cd "$dir" || break
+
+    [ -z "$dir" ] && break
+
+    local key line
+    key=$(echo "$dir" | head -1)
+    line=$(echo "$dir" | tail -1)
+
+    if [ "$key" = "esc" ]; then
+      local parent
+      parent=$(dirname "$PWD")
+      [ "$parent" != "$PWD" ] && cd "$parent"
+    elif [ -n "$line" ]; then
+      cd "$line"
+    else
+      break
+    fi
   done
 }
 ```
@@ -68,7 +85,8 @@ navd
 
 - Navigate with arrow keys or type to fuzzy search
 - `ENTER`: cd into the selected directory and continue browsing
-- `ESC` / `CTRL-C`: stop and stay in the current directory
+- `ESC`: go up one directory level (`cd ..`)
+- `CTRL-C`: quit and stay in the current directory
 
 ## Notes
 
