@@ -20,7 +20,12 @@ Copy and paste this function to your `~/.bashrc` or `~/.zshrc` file:
 
 ```bash
 navd() {
-  local fd_cmd preview_cmd
+  local fd_cmd preview_cmd max_depth
+  max_depth="${NAVD_MAX_DEPTH:-3}"
+
+  if ! [[ "$max_depth" =~ ^[1-9][0-9]*$ ]]; then
+    echo "navd: NAVD_MAX_DEPTH must be a positive integer, got '$max_depth'" && return 1
+  fi
 
   if command -v fdfind &>/dev/null; then
     fd_cmd=fdfind
@@ -45,10 +50,10 @@ navd() {
   while true; do
     local dir
     if [ -n "$fd_cmd" ]; then
-      dir=$($fd_cmd --exclude '.*/' --type d 2>/dev/null | fzf \
+      dir=$($fd_cmd --max-depth "$max_depth" --exclude '.*/' --type d 2>/dev/null | fzf \
       --header="  CURRENT DIR: $PWD" ${preview_cmd:+--preview "$preview_cmd"} --expect=esc)
     else
-      dir=$(find . -mindepth 1 -type d -not -path '*/.*' 2>/dev/null | cut -b3- | fzf \
+      dir=$(find . -mindepth 1 -maxdepth "$max_depth" -type d -not -path '*/.*' 2>/dev/null | cut -b3- | fzf \
       --header="  CURRENT DIR: $PWD" ${preview_cmd:+--preview "$preview_cmd"} --expect=esc)
     fi
 
@@ -92,4 +97,5 @@ navd
 
 - Hidden directories (`.git`, `.cache`, etc.) are excluded from results.
 - `eza` or `tree` is used for the live tree preview, with `eza` taking priority. if neither is installed, the preview pane is disabled.
-- `fd` (or `fdfind` on Debian/Ubuntu) is used by default for faster search, falling back to `find` if unavailable
+- `fd` (or `fdfind` on Debian/Ubuntu) is used by default for faster search, falling back to `find` if unavailable.
+- Search depth defaults to 3 levels, configurable via `NAVD_MAX_DEPTH` env variable (e.g. `export NAVD_MAX_DEPTH=5`).
