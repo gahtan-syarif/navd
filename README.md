@@ -83,7 +83,7 @@ source ~/.bashrc
 navd
 ```
 
-- Navigate with arrow keys or type to fuzzy search
+- Navigate with arrow keys (or mouse) and type to fuzzy search
 - `ENTER`: cd into the selected directory and continue browsing
 - `ESC`: go up one directory level (`cd ..`)
 - `CTRL-C`: quit and stay in the current directory
